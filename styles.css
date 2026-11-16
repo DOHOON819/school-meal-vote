@@ -260,10 +260,10 @@ footer a:hover, footer button:hover { color: white; }
   .plate span { font-size: 72px; }
   .tag-one { left: -4px; top: 65px; }
   .tag-two { right: -2px; bottom: 43px; }
-  .stats-strip { grid-template-columns: 1fr 1fr; margin-top: -28px; border-radius: 20px; }
+  .stats-strip { grid-template-columns: repeat(3, 1fr); margin-top: -28px; border-radius: 20px; }
   .stats-strip div { padding: 17px 6px; }
-  .stats-strip div:nth-child(3) { display: none; }
-  .stats-strip strong { font-size: 24px; }
+  .stats-strip strong { font-size: 20px; }
+  .stats-strip span { font-size: 10px; }
   .opinion-section { margin-top: 78px; padding: 0 14px; }
   .opinion-intro { padding: 27px 23px 32px; border-radius: 25px; }
   .opinion-intro h2 { font-size: 57px; }

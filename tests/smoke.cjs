@@ -9,7 +9,7 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.waitForTimeout(1200);
   const pageText = await page.locator('body').innerText();
   if (!(await page.locator('#topOpinions').count())) throw new Error('TOP 5 section missing');
-  for (const banned of ['바삭한 치킨 데이', '운동장 그늘막', '오늘 급식, 그냥 기다리지 말고 직접 골라요', '재료를 입력']) {
+  for (const banned of ['바삭한 치킨 데이', '운동장 그늘막', '오늘 급식, 그냥 기다리지 말고 직접 골라요', '재료를 입력', '한 줄 올리기', '일요일 밤 12시', '매주 월요일 00:00']) {
     if (pageText.includes(banned)) throw new Error(`Removed text is still visible: ${banned}`);
   }
   if (!(await page.locator('#heroDescription').innerText()).includes('진짜 급식이 될 수도 있습니다')) throw new Error('Required student council promise copy is missing');
@@ -24,7 +24,8 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.locator('[data-proposal-type="opinion"]').click();
   const placeholder = await page.locator('#titleInput').getAttribute('placeholder');
   if (!placeholder.includes('신청곡')) throw new Error(`Opinion composer did not switch: ${placeholder}; ${errors.join(' | ')}`);
-  if (!(await page.locator('#opinionTopicInput option', { hasText: '급식 의견' }).count())) throw new Error('Meal opinion topic is missing');
+  if (await page.locator('#opinionTopicInput, #opinionTopicField').count()) throw new Error('Unneeded opinion type field is still present');
+  if (!(await page.locator('#remainingVoteCount').innerText()).includes('/2')) throw new Error('Two-vote allowance is not shown');
   if ((await page.locator('#proposalForm textarea').count())) throw new Error('Complex description or ingredient field is present');
   if (await page.locator('#authorInput').getAttribute('placeholder') !== '10101 OOO') throw new Error('Author format placeholder missing');
   await page.locator('[data-close-modal]').click();

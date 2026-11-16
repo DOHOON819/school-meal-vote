@@ -127,7 +127,6 @@ function safeProposal(event, profiles) {
     const value = JSON.parse(event.content);
     const title = String(value.title || '').trim();
     const type = value.type === 'opinion' ? 'opinion' : 'meal';
-    const opinionTopics = ['급식 의견', '학교생활', '수업·행사', '시설', '기타'];
     if (title.length < 2 || title.length > 80) return null;
     if (title.startsWith('검증 후 삭제할 의견')) return null;
     return {
@@ -136,7 +135,6 @@ function safeProposal(event, profiles) {
       author: profiles.get(event.pubkey) || String(value.author || '급식친구').slice(0, 20),
       title,
       type,
-      topic: type === 'opinion' && opinionTopics.includes(value.topic) ? value.topic : (type === 'opinion' ? '급식 의견' : '급식 메뉴'),
       createdAt: event.created_at,
       coordinate: `${PROPOSAL_KIND}:${event.pubkey}:${tagValue(event, 'd')}`
     };
@@ -148,6 +146,7 @@ export function createBackend() {
   const pubkey = getPublicKey(secretKey);
   const sign = template => finalizeEvent(template, secretKey);
   const reactionTimes = new Map();
+  const myActiveVotes = new Set();
 
   async function loadProfiles() {
     const events = await queryRelays([{ kinds: [PROFILE_KIND], '#d': [PROFILE_D], '#t': [APP_TAG], limit: 1000 }]);
@@ -201,15 +200,13 @@ export function createBackend() {
       const title = String(value.title || '').trim();
       const author = String(value.author || '').trim();
       const type = value.type === 'opinion' ? 'opinion' : 'meal';
-      const opinionTopics = ['급식 의견', '학교생활', '수업·행사', '시설', '기타'];
-      const topic = type === 'opinion' && opinionTopics.includes(value.topic) ? value.topic : (type === 'opinion' ? '급식 의견' : '급식 메뉴');
       if (title.length < 2 || title.length > 80) throw new Error(type === 'opinion' ? '의견을 2~80자로 입력해 주세요.' : '메뉴 이름을 2~80자로 입력해 주세요.');
       if (author.length < 2 || author.length > 20) throw new Error('이름은 2~20자로 입력해 주세요.');
       const event = sign({
         kind: PROPOSAL_KIND,
         created_at: now(),
         tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title], ['type', type], ['week', currentWeekId()]],
-        content: JSON.stringify({ title, type, topic, author, week: currentWeekId() })
+        content: JSON.stringify({ title, type, author, week: currentWeekId() })
       });
       return publish(event);
     },
@@ -253,6 +250,7 @@ export function createBackend() {
           }
         } catch { /* Ignore unrelated events. */ }
       }
+      myActiveVotes.clear();
       reactions.forEach((reaction, key) => {
         const proposalId = key.slice(0, 64);
         const social = result.get(proposalId);
@@ -261,6 +259,8 @@ export function createBackend() {
         if (reaction.vote === -1) social.dislikes += 1;
         if (reaction.author === pubkey) {
           social.mine = reaction.vote;
+          if (reaction.vote === 0) myActiveVotes.delete(proposalId);
+          else myActiveVotes.add(proposalId);
           reactionTimes.set(proposalId, Math.max(reactionTimes.get(proposalId) || 0, reaction.created_at));
         }
       });
@@ -274,6 +274,7 @@ export function createBackend() {
 
     async vote(proposalId, value) {
       if (!/^[0-9a-f]{64}$/.test(proposalId) || ![-1, 0, 1].includes(value)) throw new Error('올바르지 않은 투표예요.');
+      if (value !== 0 && !myActiveVotes.has(proposalId) && myActiveVotes.size >= 2) throw new Error('투표권 2표를 모두 사용했어요. 기존 투표를 취소하면 다시 투표할 수 있어요.');
       const createdAt = Math.max(now(), (reactionTimes.get(proposalId) || 0) + 1);
       const event = sign({
         kind: PROFILE_KIND,
@@ -282,6 +283,8 @@ export function createBackend() {
         content: JSON.stringify({ vote: value })
       });
       await publish(event);
+      if (value === 0) myActiveVotes.delete(proposalId);
+      else myActiveVotes.add(proposalId);
       reactionTimes.set(proposalId, createdAt);
       return event;
     },

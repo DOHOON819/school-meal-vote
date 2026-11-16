@@ -31,7 +31,11 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.locator('.idea-card', { hasText: title }).locator('[data-action="like"]').click();
   await page.waitForFunction(() => document.querySelector('#toast')?.textContent.includes('투표를 취소했어요'), null, { timeout: 20000 });
   await card.locator('[data-action="delete"]').click();
-  await page.waitForFunction(expected => !document.body.innerText.includes(expected), title, { timeout: 30000 });
+  await page.waitForFunction(expected => !document.body.innerText.includes(expected), title, { timeout: 1500 });
+  await page.waitForFunction(() => document.querySelector('#toast')?.textContent === '삭제했어요.', null, { timeout: 30000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(8000);
+  if ((await page.locator('.idea-card', { hasText: title }).count())) throw new Error('Deleted opinion reappeared after reload');
   console.log('live opinion publish/delete test passed');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });
