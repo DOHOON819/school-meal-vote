@@ -96,7 +96,11 @@ def create_poster() -> None:
     text(c, "우리 학교,", 43, height - 128, 34, INK, "MalgunBold")
     text(c, "우리의 한 표로.", 43, height - 178, 45, GREEN, "MalgunBold")
     text(c, "언제나 쉽게 의견을 내고 투표하세요.", 44, height - 210, 14, INK, "MalgunBold")
-    text(c, "투표 결과는 매주 공개되고, 가장 많은 선택은 TOP 5가 됩니다.", 44, height - 232, 10.8, MUTED)
+
+    # The most important campaign promise.
+    rounded_box(c, 36, 581, width - 72, 43, 18, LIME)
+    text(c, "여러분의 소중한 한 표로 전교 부회장으로 뽑아주신다면,", width / 2, 606, 11.5, GREEN_DARK, "MalgunBold", centered=True)
+    text(c, "이 웹사이트는 계속 유지됩니다.", width / 2, 588, 14.5, GREEN_DARK, "MalgunBold", centered=True)
 
     # Promise statement panel.
     rounded_box(c, 36, 444, width - 72, 130, 25, GREEN_DARK)
@@ -107,7 +111,7 @@ def create_poster() -> None:
 
     chips = [
         ("투표권", "2표"),
-        ("순위 공개", "TOP 5"),
+        ("직접 제작한", "웹사이트로"),
         ("참여 방법", "QR 한 번"),
     ]
     chip_x = 350
@@ -115,7 +119,9 @@ def create_poster() -> None:
         y = 527 - index * 35
         rounded_box(c, chip_x, y, 178, 27, 13, HexColor("#3D6534"))
         text(c, label, chip_x + 14, y + 9, 8.5, HexColor("#DDE8D3"), "MalgunBold")
-        text(c, value, chip_x + 164, y + 8, 10.5, white, "MalgunBold", centered=False)
+        c.setFont("MalgunBold", 10.5)
+        c.setFillColor(white)
+        c.drawRightString(chip_x + 164, y + 8, value)
 
     # QR cards.
     card_y = 161

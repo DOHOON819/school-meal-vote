@@ -15,8 +15,10 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   if (!(await page.locator('#rankingTitle').innerText()).includes('학생 의견')) throw new Error('TOP 5 switch did not open student opinions');
   if (!(await page.locator('[data-kind="opinion"].active').count())) throw new Error('Lower student opinion tab did not sync with TOP 5 switch');
   await page.locator('[data-ranking-kind="meal"]').click();
-  if (!(await page.locator('.poster-download').count())) throw new Error('A4 campaign poster preview is missing');
-  if (await page.locator('.poster-download a[href$=".pdf"]').getAttribute('href') !== 'assets/seoun-pick-a4-campaign-poster.pdf') throw new Error('A4 poster PDF download link is wrong');
+  if (await page.locator('.poster-download').count()) throw new Error('Paper/poster promotion must not appear on the website');
+  for (const paperCopy of ['A4', '인쇄', '학교에 바로 붙일', '포스터']) {
+    if (pageText.includes(paperCopy)) throw new Error(`Paper-related copy is visible on the website: ${paperCopy}`);
+  }
   for (const banned of ['바삭한 치킨 데이', '운동장 그늘막', '오늘 급식, 그냥 기다리지 말고 직접 골라요', '재료를 입력', '한 줄 올리기', '일요일 밤 12시', '매주 월요일 00:00']) {
     if (pageText.includes(banned)) throw new Error(`Removed text is still visible: ${banned}`);
   }
