@@ -49,7 +49,8 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   if ((await page.locator('.qr-card.opinion-qr').innerText()).includes('급식')) throw new Error('Meal keyword is mixed into the student opinion QR copy');
   if ((await page.locator('#heroTagOne').innerText()).includes('🍝')) throw new Error('Food icon is still visible in opinion hero');
   if (!(await page.locator('#boardTitle').innerText()).includes('학생 의견')) throw new Error('Opinion vote board copy is missing');
-  if (!(await page.locator('.vote-cap').innerText()).includes('2,000')) throw new Error('2,000 vote cap note is missing');
+  if (await page.locator('.vote-cap').count()) throw new Error('Unverified 2,000-vote cap note is still visible');
+  if ((await page.locator('body').innerText()).includes('2,000')) throw new Error('Unverified 2,000 figure is still visible');
   await page.screenshot({ path: 'D:/CodexData/temp/seoun-vote-desktop.png', fullPage: true });
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   await mobile.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });

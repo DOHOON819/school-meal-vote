@@ -264,11 +264,7 @@ export function createBackend() {
           reactionTimes.set(proposalId, Math.max(reactionTimes.get(proposalId) || 0, reaction.created_at));
         }
       });
-      result.forEach(social => {
-        social.likes = Math.min(2000, social.likes);
-        social.dislikes = Math.min(2000, social.dislikes);
-        social.comments.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
-      });
+      result.forEach(social => social.comments.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)));
       return result;
     },
 

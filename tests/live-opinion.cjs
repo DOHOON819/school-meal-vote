@@ -23,7 +23,7 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await card.locator('[data-action="like"]').click();
   await page.waitForFunction(() => document.querySelector('#toast')?.textContent.includes('한 표를 눌렀어요'), null, { timeout: 20000 });
   await page.waitForFunction(expected => document.querySelector('#winnerTitle')?.textContent === expected, title, { timeout: 20000 });
-  await page.waitForFunction(expected => [...document.querySelectorAll('.rank-card')].some(item => item.innerText.includes(expected) && item.innerText.includes('/ 2,000표')), title, { timeout: 20000 });
+  await page.waitForFunction(expected => [...document.querySelectorAll('.rank-card')].some(item => item.innerText.includes(expected) && item.innerText.includes('1표')), title, { timeout: 20000 });
   await page.waitForFunction(expected => {
     const candidate = [...document.querySelectorAll('.idea-card')].find(item => item.innerText.includes(expected));
     return candidate && !candidate.querySelector('[data-action="like"]').disabled;

@@ -110,8 +110,6 @@ button { border: 0; cursor: pointer; }
 .refresh-button { padding: 11px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.46); font-weight: 700; }
 .filters { margin-top: 36px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
 .filters::-webkit-scrollbar { display: none; }
-.vote-cap { margin-top: 14px; padding: 14px 16px; border: 1px solid rgba(65,86,43,.14); border-radius: 15px; background: rgba(235,242,210,.72); display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
-.vote-cap strong { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; background: var(--green-dark); color: white; font-size: 11px; }
 .support-meter { height: 7px; margin-top: 18px; overflow: hidden; border-radius: 999px; background: #e7e4d8; }
 .support-meter span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--green), #a8c86c); }
 .support-count { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; text-align: right; }
@@ -283,7 +281,6 @@ footer a:hover, footer button:hover { color: white; }
   .refresh-button { font-size: 0; padding: 9px; }
   .refresh-button::first-letter { font-size: 20px; }
   .idea-card { padding: 20px; border-radius: 20px; }
-  .vote-cap { align-items: flex-start; flex-direction: column; }
   .vote-bar { grid-template-columns: 1fr 1fr; }
   .comment-toggle { grid-column: 1 / -1; }
   .how-section { padding: 65px 18px 80px; }

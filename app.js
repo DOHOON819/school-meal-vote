@@ -1,4 +1,4 @@
-import { createBackend } from './backend.js?v=11';
+import { createBackend } from './backend.js?v=12';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
@@ -105,12 +105,11 @@ function proposalCard(proposal) {
   const typeLabel = proposal.type === 'opinion' ? '💬 학생 의견' : '🍱 급식 메뉴';
   const positiveLabel = proposal.type === 'meal' ? '먹고 싶어요' : '좋아요';
   const voteDisabled = state.busy.has(proposal.id) ? ' disabled' : '';
-  const supportPercent = Math.min(100, social.likes / 20);
   return `<article class="idea-card" data-id="${proposal.id}">
     <div class="card-top"><span class="category-chip${proposal.type === 'opinion' ? ' opinion' : ''}">${typeLabel}</span>${mine ? '<button class="delete-button" data-action="delete" type="button">내가 올린 글 삭제</button>' : ''}</div>
     <h3>${escapeHtml(proposal.title)}</h3>
     <div class="author-row"><span class="author"><i class="avatar">${escapeHtml(initials(proposal.author))}</i>${escapeHtml(proposal.author)}</span><time>${relativeTime(proposal.createdAt)}</time></div>
-    <div class="support-meter"><span style="width:${supportPercent}%"></span></div><small class="support-count">${social.likes.toLocaleString('ko-KR')} / 2,000표</small>
+    <small class="support-count">현재 ${social.likes.toLocaleString('ko-KR')}표</small>
     <div class="vote-bar">
       <button class="vote-button like${social.mine === 1 ? ' active' : ''}" data-action="like" type="button" aria-pressed="${social.mine === 1}"${voteDisabled}>${social.mine === 1 ? '✓ ' + positiveLabel + ' 취소' : '♥ ' + positiveLabel} <b>${social.likes}</b></button>
       <button class="vote-button dislike${social.mine === -1 ? ' active' : ''}" data-action="dislike" type="button" aria-pressed="${social.mine === -1}"${voteDisabled}>${social.mine === -1 ? '✓ 별로예요 취소' : '– 별로예요'} <b>${social.dislikes}</b></button>
@@ -138,7 +137,7 @@ function renderRanking() {
     return `<article class="rank-card" data-id="${proposal.id}">
       <span class="rank-number">${index + 1}</span>
       <h3>${escapeHtml(proposal.title)}</h3>
-      <div class="rank-meta"><span>${opinion ? '학생 의견' : '급식 메뉴'} · ${social.likes.toLocaleString('ko-KR')} / 2,000표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
+      <div class="rank-meta"><span>${opinion ? '학생 의견' : '급식 메뉴'} · ${social.likes.toLocaleString('ko-KR')}표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
     </article>`;
   }).join('');
 }
@@ -240,8 +239,8 @@ async function handleVote(proposalId, requested) {
   const previous = { ...social };
   if (social.mine === 1) social.likes = Math.max(0, social.likes - 1);
   if (social.mine === -1) social.dislikes = Math.max(0, social.dislikes - 1);
-  if (next === 1) social.likes = Math.min(2000, social.likes + 1);
-  if (next === -1) social.dislikes = Math.min(2000, social.dislikes + 1);
+  if (next === 1) social.likes += 1;
+  if (next === -1) social.dislikes += 1;
   social.mine = next;
   state.busy.add(proposalId);
   render();
