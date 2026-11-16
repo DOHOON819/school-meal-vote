@@ -9,7 +9,7 @@
   <meta property="og:description" content="먹고 싶은 급식과 바라는 점을 한 줄로 올리고 함께 투표해요.">
   <title>서운픽 — 서운중 학생 투표</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -145,6 +145,7 @@
       <label class="field big-field"><span id="titleFieldLabel">먹고 싶은 메뉴 <b>필수</b></span><input id="titleInput" name="title" maxlength="80" required placeholder="예: 치킨마요 덮밥"></label>
       <label class="field"><span>제안자 이름 <b>필수</b></span><input id="authorInput" name="author" maxlength="20" required placeholder="10101 OOO" autocomplete="name"></label>
       <button class="primary-button submit-button" id="submitProposalButton" type="submit">이 한 줄 올리기</button>
+      <p class="form-error" id="proposalFormError" role="alert" hidden></p>
       <p class="form-note">학년·반·번호와 이름을 10101 OOO처럼 적어주세요. 회원가입 없이 공개됩니다.</p>
     </form>
   </dialog>
@@ -161,6 +162,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="app.js?v=4"></script>
 </body>
 </html>

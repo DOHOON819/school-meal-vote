@@ -1,4 +1,4 @@
-import { createBackend } from './backend.js';
+import { createBackend } from './backend.js?v=4';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
@@ -12,6 +12,7 @@ const elements = {
   winnerSymbol: $('#winnerSymbol'), winnerTitle: $('#winnerTitle'), winnerHint: $('#winnerHint'), winnerVotes: $('#winnerVotes'),
   composer: $('#composerDialog'), proposalForm: $('#proposalForm'), title: $('#titleInput'), author: $('#authorInput'), proposalType: $('#proposalTypeInput'),
   titleFieldLabel: $('#titleFieldLabel'), composerTitle: $('#composerTitle'), submit: $('#submitProposalButton'),
+  formError: $('#proposalFormError'),
   identityDialog: $('#identityDialog'), identityForm: $('#identityForm'), identityInput: $('#identityInput'), identityLabel: $('#identityLabel'), toast: $('#toast')
 };
 
@@ -276,6 +277,8 @@ function selectComposerType(type) {
 function openComposer(type = state.kind) {
   selectComposerType(type);
   elements.author.value = state.name || '';
+  elements.formError.hidden = true;
+  elements.formError.textContent = '';
   elements.composer.showModal();
   requestAnimationFrame(() => elements.title.focus());
 }
@@ -293,6 +296,8 @@ $$('[data-close-identity]').forEach(button => button.addEventListener('click', (
 
 elements.proposalForm.addEventListener('submit', async event => {
   event.preventDefault();
+  elements.formError.hidden = true;
+  elements.formError.textContent = '';
   elements.submit.disabled = true;
   elements.submit.textContent = '올리는 중…';
   try {
@@ -303,8 +308,18 @@ elements.proposalForm.addEventListener('submit', async event => {
     elements.composer.close();
     toast('한 줄이 올라갔어요!');
     await load({ quiet: true });
-  } catch (error) { toast(error.message || '올리지 못했어요.'); }
+  } catch (error) {
+    const message = error.message || '올리지 못했어요. 인터넷 연결을 확인해 주세요.';
+    elements.formError.textContent = message;
+    elements.formError.hidden = false;
+    toast(message);
+  }
   finally { elements.submit.disabled = false; elements.submit.textContent = '이 한 줄 올리기'; }
+});
+
+elements.proposalForm.addEventListener('input', () => {
+  elements.formError.hidden = true;
+  elements.formError.textContent = '';
 });
 
 elements.identityForm.addEventListener('submit', async event => {
