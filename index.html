@@ -9,7 +9,7 @@
   <meta property="og:description" content="먹고 싶은 급식과 바라는 점을 한 줄로 올리고 함께 투표해요.">
   <title>서운픽 — 서운중 학생 투표</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -27,23 +27,23 @@
   <main id="top">
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
-        <span class="eyebrow">서운중학교 1학년 · 매주 월요일 00:00 새 투표</span>
+        <span class="eyebrow" id="heroEyebrow">서운중학교 1학년 · 매주 월요일 00:00 새 투표</span>
         <h1 id="heroTitle">우리 학교,<br><em>우리의 한 표</em>로.</h1>
-        <p>먹고 싶은 메뉴를 한 줄로 제안하세요. 친구들의 투표와 의견이 모이면 진짜 급식이 될 수도 있습니다.</p>
+        <p id="heroDescription">먹고 싶은 메뉴를 한 줄로 제안하세요. 친구들의 투표와 의견이 모이면 진짜 급식이 될 수도 있습니다.</p>
         <div class="hero-actions">
-          <button class="primary-button large" data-open-composer type="button">메뉴 또는 의견 올리기</button>
-          <a class="text-link" href="#topOpinions">의견 TOP 5 보기 <span>↓</span></a>
+          <button class="primary-button large" id="heroComposeButton" data-open-composer type="button">급식 메뉴 올리기</button>
+          <a class="text-link" id="heroSecondaryLink" href="?tab=opinion#topOpinions">학생 의견 TOP 5 보기 <span>↓</span></a>
         </div>
       </div>
       <div class="hero-visual" aria-label="급식 투표 예시">
         <div class="plate-card">
-          <span class="plate-badge">급식 투표 현재 1위</span>
+          <span class="plate-badge" id="winnerBadge">급식 투표 현재 1위</span>
           <div class="plate question-plate" aria-hidden="true"><span id="winnerSymbol">?</span></div>
           <h2 id="winnerTitle">어떤 메뉴가 1위가 될까요?</h2>
           <div class="mini-vote"><span id="winnerHint">첫 메뉴를 기다리는 중</span><b id="winnerVotes">♥ 0</b></div>
         </div>
-        <span class="float-tag tag-one">🍝 메뉴 한 줄!</span>
-        <span class="float-tag tag-two">💬 의견도 한 표</span>
+        <span class="float-tag tag-one" id="heroTagOne">🍝 메뉴 한 줄!</span>
+        <span class="float-tag tag-two" id="heroTagTwo">✓ 학생 한 표</span>
       </div>
     </section>
 
@@ -58,8 +58,9 @@
         <div class="school-seal"><img src="assets/seoun-official-logo.png" alt="서운중학교 공식 로고"></div>
         <span class="eyebrow">STUDENT VOICE</span>
         <h2>학생 의견<br><em>TOP 5</em></h2>
-        <p>표를 가장 많이 받은 의견부터 학교에 문의해요. 1순위 의견이 반영되지 않으면 다음 순위 의견을 이어서 전달해요.</p>
+        <p>아래 학생 의견 투표에서 받은 표가 이 순위에 바로 반영돼요. 가장 많은 표를 받은 의견부터 학교에 문의하고, 반영되지 않으면 다음 순위로 이어가요.</p>
         <button class="light-button" data-open-opinion type="button">내 의견 한 줄 올리기</button>
+        <button class="rank-list-button" data-view-opinions type="button">전체 학생 의견 보기 ↓</button>
       </div>
       <div class="ranking-board" id="rankingBoard" aria-live="polite">
         <div class="ranking-empty"><span>💬</span><strong>아직 올라온 의견이 없어요</strong><small>첫 의견을 올리면 여기에서 1위가 됩니다.</small></div>
@@ -78,7 +79,7 @@
 
       <div class="filters kind-tabs" role="tablist" aria-label="투표 종류">
         <button class="filter active" type="button" data-kind="meal">🍱 급식 메뉴 투표</button>
-        <button class="filter" type="button" data-kind="opinion">💬 학교 의견 투표</button>
+        <button class="filter" type="button" data-kind="opinion">💬 학생 의견 투표</button>
       </div>
 
       <div class="board-toolbar">
@@ -91,14 +92,15 @@
           </select>
         </label>
       </div>
+      <div class="vote-cap"><strong>한 항목당 최대 2,000표</strong><span>전교생 약 2,000명 기준으로 메뉴 하나 또는 의견 하나가 최대 2,000표까지 받을 수 있어요.</span></div>
 
       <div class="loading-card" id="loadingCard">
         <span class="spinner" aria-hidden="true"></span>
-        <p>친구들의 메뉴를 모으고 있어요…</p>
+        <p id="loadingMessage">친구들의 메뉴를 모으고 있어요…</p>
       </div>
       <div class="idea-grid" id="ideaGrid" aria-live="polite"></div>
       <div class="empty-state" id="emptyState" hidden>
-        <span aria-hidden="true">🍽️</span>
+        <span id="emptySymbol" aria-hidden="true">🍽️</span>
         <h3 id="emptyTitle">아직 올라온 메뉴가 없어요</h3>
         <p id="emptyDescription">먹고 싶은 메뉴 이름을 첫 번째로 올려보세요.</p>
         <button class="primary-button" data-open-composer type="button">첫 한 줄 올리기</button>
@@ -142,6 +144,7 @@
         <button class="type-option" data-proposal-type="opinion" type="button"><span>💬</span><b>학교 의견</b><small>학교에 바라는 점</small></button>
       </div>
       <input type="hidden" id="proposalTypeInput" value="meal">
+      <label class="field opinion-topic-field" id="opinionTopicField" hidden><span>의견 종류</span><select id="opinionTopicInput"><option>급식 의견</option><option>학교생활</option><option>수업·행사</option><option>시설</option><option>기타</option></select></label>
       <label class="field big-field"><span id="titleFieldLabel">먹고 싶은 메뉴 <b>필수</b></span><input id="titleInput" name="title" maxlength="80" required placeholder="예: 치킨마요 덮밥"></label>
       <label class="field"><span>제안자 이름 <b>필수</b></span><input id="authorInput" name="author" maxlength="20" required placeholder="10101 OOO" autocomplete="name"></label>
       <button class="primary-button submit-button" id="submitProposalButton" type="submit">이 한 줄 올리기</button>
@@ -162,6 +165,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="app.js?v=5"></script>
+  <script type="module" src="app.js?v=6"></script>
 </body>
 </html>

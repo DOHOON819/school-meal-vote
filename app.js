@@ -1,16 +1,20 @@
-import { createBackend } from './backend.js?v=4';
+import { createBackend } from './backend.js?v=6';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
-const state = { proposals: [], social: new Map(), kind: requestedKind === 'opinion' ? 'opinion' : 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
+const opinionDestination = location.hash === '#topOpinions';
+const state = { proposals: [], social: new Map(), kind: requestedKind === 'opinion' || opinionDestination ? 'opinion' : 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const elements = {
-  grid: $('#ideaGrid'), ranking: $('#rankingBoard'), loading: $('#loadingCard'), empty: $('#emptyState'), summary: $('#resultSummary'),
+  grid: $('#ideaGrid'), ranking: $('#rankingBoard'), loading: $('#loadingCard'), loadingMessage: $('#loadingMessage'), empty: $('#emptyState'), summary: $('#resultSummary'),
   proposalCount: $('#proposalCount'), voteCount: $('#voteCount'), sort: $('#sortSelect'), refresh: $('#refreshButton'),
-  boardTitle: $('#boardTitle'), boardDescription: $('#boardDescription'), emptyTitle: $('#emptyTitle'), emptyDescription: $('#emptyDescription'),
+  boardTitle: $('#boardTitle'), boardDescription: $('#boardDescription'), emptySymbol: $('#emptySymbol'), emptyTitle: $('#emptyTitle'), emptyDescription: $('#emptyDescription'),
+  heroEyebrow: $('#heroEyebrow'), heroTitle: $('#heroTitle'), heroDescription: $('#heroDescription'), heroComposeButton: $('#heroComposeButton'), heroSecondaryLink: $('#heroSecondaryLink'),
+  heroTagOne: $('#heroTagOne'), heroTagTwo: $('#heroTagTwo'), winnerBadge: $('#winnerBadge'),
   winnerSymbol: $('#winnerSymbol'), winnerTitle: $('#winnerTitle'), winnerHint: $('#winnerHint'), winnerVotes: $('#winnerVotes'),
   composer: $('#composerDialog'), proposalForm: $('#proposalForm'), title: $('#titleInput'), author: $('#authorInput'), proposalType: $('#proposalTypeInput'),
+  opinionTopicField: $('#opinionTopicField'), opinionTopic: $('#opinionTopicInput'),
   titleFieldLabel: $('#titleFieldLabel'), composerTitle: $('#composerTitle'), submit: $('#submitProposalButton'),
   formError: $('#proposalFormError'),
   identityDialog: $('#identityDialog'), identityForm: $('#identityForm'), identityInput: $('#identityInput'), identityLabel: $('#identityLabel'), toast: $('#toast')
@@ -78,7 +82,7 @@ async function ensureName(preferred) {
 }
 
 function ranked(items) {
-  return [...items].sort((a, b) => scoreFor(b.id) - scoreFor(a.id) || socialFor(b.id).likes - socialFor(a.id).likes || b.createdAt - a.createdAt);
+  return [...items].sort((a, b) => socialFor(b.id).likes - socialFor(a.id).likes || socialFor(a.id).dislikes - socialFor(b.id).dislikes || b.createdAt - a.createdAt);
 }
 
 function sortedFilteredProposals() {
@@ -86,7 +90,7 @@ function sortedFilteredProposals() {
   return items.sort((a, b) => {
     if (state.sort === 'newest') return b.createdAt - a.createdAt;
     if (state.sort === 'comments') return socialFor(b.id).comments.length - socialFor(a.id).comments.length || b.createdAt - a.createdAt;
-    return scoreFor(b.id) - scoreFor(a.id) || socialFor(b.id).likes - socialFor(a.id).likes || b.createdAt - a.createdAt;
+    return socialFor(b.id).likes - socialFor(a.id).likes || socialFor(a.id).dislikes - socialFor(b.id).dislikes || b.createdAt - a.createdAt;
   });
 }
 
@@ -97,13 +101,15 @@ function proposalCard(proposal) {
   const comments = social.comments.length
     ? social.comments.map(comment => `<div class="comment"><strong>${escapeHtml(comment.name)}</strong>${escapeHtml(comment.body)}</div>`).join('')
     : '<p class="comment-empty">첫 댓글을 남겨보세요.</p>';
-  const typeLabel = proposal.type === 'opinion' ? '💬 학교 의견' : '🍱 급식 메뉴';
+  const typeLabel = proposal.type === 'opinion' ? `💬 ${escapeHtml(proposal.topic || '급식 의견')}` : '🍱 급식 메뉴';
   const positiveLabel = proposal.type === 'meal' ? '먹고 싶어요' : '좋아요';
   const voteDisabled = state.busy.has(proposal.id) ? ' disabled' : '';
+  const supportPercent = Math.min(100, social.likes / 20);
   return `<article class="idea-card" data-id="${proposal.id}">
     <div class="card-top"><span class="category-chip${proposal.type === 'opinion' ? ' opinion' : ''}">${typeLabel}</span>${mine ? '<button class="delete-button" data-action="delete" type="button">내가 올린 글 삭제</button>' : ''}</div>
     <h3>${escapeHtml(proposal.title)}</h3>
     <div class="author-row"><span class="author"><i class="avatar">${escapeHtml(initials(proposal.author))}</i>${escapeHtml(proposal.author)}</span><time>${relativeTime(proposal.createdAt)}</time></div>
+    <div class="support-meter"><span style="width:${supportPercent}%"></span></div><small class="support-count">${social.likes.toLocaleString('ko-KR')} / 2,000표</small>
     <div class="vote-bar">
       <button class="vote-button like${social.mine === 1 ? ' active' : ''}" data-action="like" type="button" aria-pressed="${social.mine === 1}"${voteDisabled}>${social.mine === 1 ? '✓ ' + positiveLabel + ' 취소' : '♥ ' + positiveLabel} <b>${social.likes}</b></button>
       <button class="vote-button dislike${social.mine === -1 ? ' active' : ''}" data-action="dislike" type="button" aria-pressed="${social.mine === -1}"${voteDisabled}>${social.mine === -1 ? '✓ 별로예요 취소' : '– 별로예요'} <b>${social.dislikes}</b></button>
@@ -128,20 +134,21 @@ function renderRanking() {
     return `<article class="rank-card" data-id="${proposal.id}">
       <span class="rank-number">${index + 1}</span>
       <h3>${escapeHtml(proposal.title)}</h3>
-      <div class="rank-meta"><span>${escapeHtml(proposal.author)} · ${social.likes}표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
+      <div class="rank-meta"><span>${escapeHtml(proposal.topic || '급식 의견')} · ${social.likes.toLocaleString('ko-KR')} / 2,000표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
     </article>`;
   }).join('');
 }
 
 function renderWinner() {
-  const meals = ranked(state.proposals.filter(item => item.type === 'meal'));
-  const winner = meals.find(item => socialFor(item.id).likes + socialFor(item.id).dislikes > 0);
+  const opinion = state.kind === 'opinion';
+  const candidates = ranked(state.proposals.filter(item => item.type === state.kind));
+  const winner = candidates.find(item => socialFor(item.id).likes + socialFor(item.id).dislikes > 0);
   const plate = elements.winnerSymbol.closest('.plate');
   if (!winner) {
     plate.classList.remove('has-winner');
     elements.winnerSymbol.textContent = '?';
-    elements.winnerTitle.textContent = '어떤 메뉴가 1위가 될까요?';
-    elements.winnerHint.textContent = meals.length ? '첫 투표를 기다리는 중' : '첫 메뉴를 기다리는 중';
+    elements.winnerTitle.textContent = opinion ? '어떤 의견이 1위가 될까요?' : '어떤 메뉴가 1위가 될까요?';
+    elements.winnerHint.textContent = candidates.length ? '첫 투표를 기다리는 중' : (opinion ? '첫 의견을 기다리는 중' : '첫 메뉴를 기다리는 중');
     elements.winnerVotes.textContent = '♥ 0';
     return;
   }
@@ -149,17 +156,33 @@ function renderWinner() {
   plate.classList.add('has-winner');
   elements.winnerSymbol.textContent = '1위';
   elements.winnerTitle.textContent = winner.title;
-  elements.winnerHint.textContent = '지금 가장 많은 표';
+  elements.winnerHint.textContent = opinion ? '지금 가장 많은 공감' : '지금 가장 많은 표';
   elements.winnerVotes.textContent = `♥ ${social.likes}`;
 }
 
 function updateBoardCopy(items) {
   const opinion = state.kind === 'opinion';
-  elements.boardTitle.textContent = opinion ? '학교에 바라는 점에 투표해요' : '먹고 싶은 급식에 투표해요';
-  elements.boardDescription.textContent = opinion ? '좋다고 생각하는 의견에 한 표를 눌러주세요.' : '먹고 싶은 메뉴 이름을 보고 한 표를 눌러주세요.';
+  elements.boardTitle.textContent = opinion ? '학생 의견에 투표해요' : '먹고 싶은 급식에 투표해요';
+  elements.boardDescription.textContent = opinion ? '아래 의견에 누른 표가 학생 의견 TOP 5 순위에 바로 반영돼요.' : '먹고 싶은 메뉴 이름을 보고 한 표를 눌러주세요.';
+  elements.loadingMessage.textContent = opinion ? '친구들의 의견을 모으고 있어요…' : '친구들의 메뉴를 모으고 있어요…';
+  elements.emptySymbol.textContent = opinion ? '💬' : '🍽️';
   elements.emptyTitle.textContent = opinion ? '아직 올라온 의견이 없어요' : '아직 올라온 메뉴가 없어요';
   elements.emptyDescription.textContent = opinion ? '학교에 바라는 점을 한 줄로 올려보세요.' : '먹고 싶은 메뉴 이름을 첫 번째로 올려보세요.';
-  elements.summary.textContent = `${opinion ? '학교 의견' : '급식 메뉴'} ${items.length}개`;
+  elements.summary.textContent = `${opinion ? '학생 의견' : '급식 메뉴'} ${items.length}개`;
+}
+
+function updateModeCopy() {
+  const opinion = state.kind === 'opinion';
+  document.body.classList.toggle('opinion-mode', opinion);
+  elements.heroEyebrow.textContent = opinion ? '서운중학교 학생 의견 투표 · 매주 월요일 00:00 새 투표' : '서운중학교 1학년 · 매주 월요일 00:00 새 투표';
+  elements.heroTitle.innerHTML = opinion ? '우리 학교,<br><em>우리 의견</em>으로.' : '우리 학교,<br><em>우리의 한 표</em>로.';
+  elements.heroDescription.textContent = opinion ? '급식 의견을 포함해 학교에 바라는 점을 한 줄로 올리세요. 아래 학생 의견 투표에서 받은 표가 TOP 5 순위에 바로 반영됩니다.' : '먹고 싶은 메뉴를 한 줄로 제안하세요. 친구들의 투표와 의견이 모이면 진짜 급식이 될 수도 있습니다.';
+  elements.heroComposeButton.textContent = opinion ? '학생 의견 올리기' : '급식 메뉴 올리기';
+  elements.heroSecondaryLink.href = opinion ? '?tab=meal#ideas' : '?tab=opinion#topOpinions';
+  elements.heroSecondaryLink.innerHTML = opinion ? '급식 메뉴 투표 보기 <span>↓</span>' : '학생 의견 TOP 5 보기 <span>↓</span>';
+  elements.heroTagOne.textContent = opinion ? '의견 한 줄!' : '🍝 메뉴 한 줄!';
+  elements.heroTagTwo.textContent = '✓ 학생 한 표';
+  elements.winnerBadge.textContent = opinion ? '학생 의견 현재 1위' : '급식 투표 현재 1위';
 }
 
 function render() {
@@ -168,6 +191,7 @@ function render() {
   elements.empty.hidden = items.length !== 0;
   elements.grid.hidden = items.length === 0;
   updateBoardCopy(items);
+  updateModeCopy();
   elements.proposalCount.textContent = state.proposals.length.toLocaleString('ko-KR');
   elements.voteCount.textContent = [...state.social.values()].reduce((sum, social) => sum + social.likes + social.dislikes, 0).toLocaleString('ko-KR');
   renderRanking();
@@ -197,10 +221,10 @@ async function handleVote(proposalId, requested) {
   const social = socialFor(proposalId);
   const next = social.mine === requested ? 0 : requested;
   const previous = { ...social };
-  if (social.mine === 1) social.likes -= 1;
-  if (social.mine === -1) social.dislikes -= 1;
-  if (next === 1) social.likes += 1;
-  if (next === -1) social.dislikes += 1;
+  if (social.mine === 1) social.likes = Math.max(0, social.likes - 1);
+  if (social.mine === -1) social.dislikes = Math.max(0, social.dislikes - 1);
+  if (next === 1) social.likes = Math.min(2000, social.likes + 1);
+  if (next === -1) social.dislikes = Math.min(2000, social.dislikes + 1);
   social.mine = next;
   state.busy.add(proposalId);
   render();
@@ -269,6 +293,7 @@ function selectComposerType(type) {
   elements.proposalType.value = type;
   $$('.type-option').forEach(button => button.classList.toggle('active', button.dataset.proposalType === type));
   const opinion = type === 'opinion';
+  elements.opinionTopicField.hidden = !opinion;
   elements.composerTitle.textContent = opinion ? '학교에 바라는 점이 있나요?' : '어떤 급식이 먹고 싶나요?';
   elements.titleFieldLabel.innerHTML = opinion ? '학교에 바라는 점 <b>필수</b>' : '먹고 싶은 메뉴 <b>필수</b>';
   elements.title.placeholder = opinion ? '예: 점심시간에 신청곡을 틀어주세요' : '예: 치킨마요 덮밥';
@@ -302,7 +327,7 @@ elements.proposalForm.addEventListener('submit', async event => {
   elements.submit.textContent = '올리는 중…';
   try {
     const author = await ensureName(elements.author.value);
-    await backend.publishProposal({ title: elements.title.value, type: elements.proposalType.value, author });
+    await backend.publishProposal({ title: elements.title.value, type: elements.proposalType.value, topic: elements.opinionTopic.value, author });
     elements.proposalForm.reset();
     selectComposerType('meal');
     elements.composer.close();
@@ -336,6 +361,16 @@ $$('[data-kind]').forEach(button => button.addEventListener('click', () => {
   history.replaceState({}, '', url);
   render();
 }));
+$$('[data-view-opinions]').forEach(button => button.addEventListener('click', () => {
+  state.kind = 'opinion';
+  $$('[data-kind]').forEach(item => item.classList.toggle('active', item.dataset.kind === 'opinion'));
+  const url = new URL(location.href);
+  url.searchParams.set('tab', 'opinion');
+  url.hash = 'ideas';
+  history.replaceState({}, '', url);
+  render();
+  $('#ideas').scrollIntoView({ behavior: 'smooth' });
+}));
 elements.sort.addEventListener('change', () => { state.sort = elements.sort.value; render(); });
 elements.refresh.addEventListener('click', async () => { await load({ quiet: true }); toast('최신 투표로 새로고침했어요.'); });
 $('#copyLinkButton').addEventListener('click', async () => {
@@ -350,6 +385,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   const localName = localStorage.getItem('school-meal-vote:name') || '';
   setNameLocally(localName);
   $$('[data-kind]').forEach(button => button.classList.toggle('active', button.dataset.kind === state.kind));
+  if (opinionDestination && requestedKind !== 'opinion') {
+    const url = new URL(location.href);
+    url.searchParams.set('tab', 'opinion');
+    history.replaceState({}, '', url);
+  }
+  updateModeCopy();
+  updateBoardCopy([]);
+  renderWinner();
   backend.getName().then(name => {
     if (name) { localStorage.setItem('school-meal-vote:name', name); setNameLocally(name); }
   }).catch(() => {});

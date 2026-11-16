@@ -127,6 +127,7 @@ function safeProposal(event, profiles) {
     const value = JSON.parse(event.content);
     const title = String(value.title || '').trim();
     const type = value.type === 'opinion' ? 'opinion' : 'meal';
+    const opinionTopics = ['급식 의견', '학교생활', '수업·행사', '시설', '기타'];
     if (title.length < 2 || title.length > 80) return null;
     if (title.startsWith('검증 후 삭제할 의견')) return null;
     return {
@@ -135,6 +136,7 @@ function safeProposal(event, profiles) {
       author: profiles.get(event.pubkey) || String(value.author || '급식친구').slice(0, 20),
       title,
       type,
+      topic: type === 'opinion' && opinionTopics.includes(value.topic) ? value.topic : (type === 'opinion' ? '급식 의견' : '급식 메뉴'),
       createdAt: event.created_at,
       coordinate: `${PROPOSAL_KIND}:${event.pubkey}:${tagValue(event, 'd')}`
     };
@@ -199,13 +201,15 @@ export function createBackend() {
       const title = String(value.title || '').trim();
       const author = String(value.author || '').trim();
       const type = value.type === 'opinion' ? 'opinion' : 'meal';
+      const opinionTopics = ['급식 의견', '학교생활', '수업·행사', '시설', '기타'];
+      const topic = type === 'opinion' && opinionTopics.includes(value.topic) ? value.topic : (type === 'opinion' ? '급식 의견' : '급식 메뉴');
       if (title.length < 2 || title.length > 80) throw new Error(type === 'opinion' ? '의견을 2~80자로 입력해 주세요.' : '메뉴 이름을 2~80자로 입력해 주세요.');
       if (author.length < 2 || author.length > 20) throw new Error('이름은 2~20자로 입력해 주세요.');
       const event = sign({
         kind: PROPOSAL_KIND,
         created_at: now(),
         tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title], ['type', type], ['week', currentWeekId()]],
-        content: JSON.stringify({ title, type, author, week: currentWeekId() })
+        content: JSON.stringify({ title, type, topic, author, week: currentWeekId() })
       });
       return publish(event);
     },
@@ -260,7 +264,11 @@ export function createBackend() {
           reactionTimes.set(proposalId, Math.max(reactionTimes.get(proposalId) || 0, reaction.created_at));
         }
       });
-      result.forEach(social => social.comments.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)));
+      result.forEach(social => {
+        social.likes = Math.min(2000, social.likes);
+        social.dislikes = Math.min(2000, social.dislikes);
+        social.comments.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+      });
       return result;
     },
 
