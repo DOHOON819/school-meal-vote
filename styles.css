@@ -216,9 +216,11 @@ footer a:hover, footer button:hover { color: white; }
 .toast { position: fixed; left: 50%; bottom: 28px; translate: -50% 20px; z-index: 40; padding: 12px 18px; border-radius: 12px; background: var(--ink); color: white; font-size: 13px; font-weight: 800; box-shadow: var(--shadow); opacity: 0; visibility: hidden; transition: .25s; }
 .toast.show { opacity: 1; visibility: visible; translate: -50% 0; }
 .mobile-compose { display: none; }
-.footer-school { display: flex; align-items: center; gap: 10px; }
-.footer-school img { width: 190px; height: auto; }
+.footer-school { display: flex; align-items: center; gap: 12px; }
+.footer-logo-panel { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+.footer-school img { display: block; width: 220px; height: 42px; object-fit: contain; }
 .footer-school > span { padding-left: 10px; border-left: 1px solid rgba(255,255,255,.2); white-space: nowrap; }
+.footer-school > .footer-logo-panel { padding-left: 14px; border-left: 0; }
 
 @media (max-width: 850px) {
   .hero { grid-template-columns: 1fr; padding-top: 58px; text-align: center; }
@@ -291,7 +293,10 @@ footer a:hover, footer button:hover { color: white; }
   .modal-shell h2 { padding-right: 30px; }
   .type-option { min-height: 108px; }
   .footer-school { flex-direction: column; }
+  .footer-logo-panel { padding: 9px 12px; }
+  .footer-school img { width: 180px; height: 34px; }
   .footer-school > span { border: 0; padding: 0; }
+  .footer-school > .footer-logo-panel { padding: 9px 12px; }
   .mobile-compose { display: block; position: fixed; right: 16px; bottom: max(17px, env(safe-area-inset-bottom)); z-index: 14; min-height: 50px; padding: 0 19px; border-radius: 999px; background: var(--ink); color: white; font-weight: 900; box-shadow: 0 13px 35px rgba(16, 25, 10, .27); }
   .toast { bottom: 82px; width: max-content; max-width: calc(100% - 32px); text-align: center; }
 }

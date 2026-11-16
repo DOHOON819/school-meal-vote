@@ -1,4 +1,4 @@
-import { createBackend } from './backend.js?v=6';
+import { createBackend } from './backend.js?v=7';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
@@ -167,7 +167,7 @@ function updateBoardCopy(items) {
   elements.loadingMessage.textContent = opinion ? '친구들의 의견을 모으고 있어요…' : '친구들의 메뉴를 모으고 있어요…';
   elements.emptySymbol.textContent = opinion ? '💬' : '🍽️';
   elements.emptyTitle.textContent = opinion ? '아직 올라온 의견이 없어요' : '아직 올라온 메뉴가 없어요';
-  elements.emptyDescription.textContent = opinion ? '학교에 바라는 점을 한 줄로 올려보세요.' : '먹고 싶은 메뉴 이름을 첫 번째로 올려보세요.';
+  elements.emptyDescription.textContent = opinion ? '급식이나 학교생활에 관한 의견을 한 줄로 올려보세요.' : '먹고 싶은 메뉴 이름을 첫 번째로 올려보세요.';
   elements.summary.textContent = `${opinion ? '학생 의견' : '급식 메뉴'} ${items.length}개`;
 }
 
@@ -294,8 +294,8 @@ function selectComposerType(type) {
   $$('.type-option').forEach(button => button.classList.toggle('active', button.dataset.proposalType === type));
   const opinion = type === 'opinion';
   elements.opinionTopicField.hidden = !opinion;
-  elements.composerTitle.textContent = opinion ? '학교에 바라는 점이 있나요?' : '어떤 급식이 먹고 싶나요?';
-  elements.titleFieldLabel.innerHTML = opinion ? '학교에 바라는 점 <b>필수</b>' : '먹고 싶은 메뉴 <b>필수</b>';
+  elements.composerTitle.textContent = opinion ? '어떤 학생 의견을 올릴까요?' : '어떤 급식이 먹고 싶나요?';
+  elements.titleFieldLabel.innerHTML = opinion ? '학생 의견 <b>필수</b>' : '먹고 싶은 메뉴 <b>필수</b>';
   elements.title.placeholder = opinion ? '예: 점심시간에 신청곡을 틀어주세요' : '예: 치킨마요 덮밥';
 }
 

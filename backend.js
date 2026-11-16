@@ -215,7 +215,7 @@ export function createBackend() {
     },
 
     async deleteProposal(proposal) {
-      if (proposal.authorId !== pubkey) throw new Error('내가 올린 메뉴만 삭제할 수 있어요.');
+      if (proposal.authorId !== pubkey) throw new Error('내가 올린 글만 삭제할 수 있어요.');
       const event = sign({
         kind: DELETE_KIND,
         created_at: now(),
