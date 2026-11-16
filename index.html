@@ -9,7 +9,7 @@
   <meta property="og:description" content="언제나 쉽게 의견을 내고 투표해요. 투표 결과는 매주 집계됩니다.">
   <title>서운픽 — 서운중 학생 투표</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -56,14 +56,14 @@
     <section class="opinion-section" id="topOpinions">
       <div class="opinion-intro">
         <div class="school-seal"><img src="assets/seoun-official-logo.png" alt="서운중학교 공식 로고"></div>
-        <span class="eyebrow">STUDENT VOICE</span>
-        <h2>학생 의견<br><em>TOP 5</em></h2>
-        <p>아래 학생 의견 투표에서 받은 표가 이 순위에 바로 반영돼요. 가장 많은 표를 받은 의견부터 학교에 문의하고, 반영되지 않으면 다음 순위로 이어가요.</p>
-        <button class="light-button" data-open-opinion type="button">내 의견 내기</button>
-        <button class="rank-list-button" data-view-opinions type="button">전체 학생 의견 보기 ↓</button>
+        <span class="eyebrow" id="rankingEyebrow">MEAL CHOICE</span>
+        <h2 id="rankingTitle">급식 메뉴<br><em>TOP 5</em></h2>
+        <p id="rankingDescription">아래 급식 메뉴 투표에서 받은 표가 이 순위에 바로 반영돼요. 가장 많은 표를 받은 메뉴를 한눈에 확인할 수 있어요.</p>
+        <button class="light-button" id="rankingComposeButton" data-open-ranking type="button">먹고 싶은 메뉴 제안하기</button>
+        <button class="rank-list-button" id="rankingListButton" data-view-ranking type="button">전체 급식 메뉴 보기 ↓</button>
       </div>
       <div class="ranking-board" id="rankingBoard" aria-live="polite">
-        <div class="ranking-empty"><span>💬</span><strong>아직 올라온 의견이 없어요</strong><small>첫 의견을 올리면 여기에서 1위가 됩니다.</small></div>
+        <div class="ranking-empty"><span>🍱</span><strong>아직 올라온 메뉴가 없어요</strong><small>첫 메뉴를 제안하면 여기에서 1위가 됩니다.</small></div>
       </div>
     </section>
 
@@ -164,6 +164,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>

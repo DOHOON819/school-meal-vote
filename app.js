@@ -1,9 +1,8 @@
-import { createBackend } from './backend.js?v=8';
+import { createBackend } from './backend.js?v=9';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
-const opinionDestination = location.hash === '#topOpinions';
-const state = { proposals: [], social: new Map(), kind: requestedKind === 'opinion' || opinionDestination ? 'opinion' : 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
+const state = { proposals: [], social: new Map(), kind: requestedKind === 'opinion' ? 'opinion' : 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const elements = {
@@ -12,6 +11,7 @@ const elements = {
   boardTitle: $('#boardTitle'), boardDescription: $('#boardDescription'), emptySymbol: $('#emptySymbol'), emptyTitle: $('#emptyTitle'), emptyDescription: $('#emptyDescription'),
   heroEyebrow: $('#heroEyebrow'), heroTitle: $('#heroTitle'), heroDescription: $('#heroDescription'), heroComposeButton: $('#heroComposeButton'), heroSecondaryLink: $('#heroSecondaryLink'),
   heroTagOne: $('#heroTagOne'), heroTagTwo: $('#heroTagTwo'), winnerBadge: $('#winnerBadge'),
+  rankingEyebrow: $('#rankingEyebrow'), rankingTitle: $('#rankingTitle'), rankingDescription: $('#rankingDescription'), rankingComposeButton: $('#rankingComposeButton'), rankingListButton: $('#rankingListButton'),
   winnerSymbol: $('#winnerSymbol'), winnerTitle: $('#winnerTitle'), winnerHint: $('#winnerHint'), winnerVotes: $('#winnerVotes'),
   composer: $('#composerDialog'), proposalForm: $('#proposalForm'), title: $('#titleInput'), author: $('#authorInput'), proposalType: $('#proposalTypeInput'),
   titleFieldLabel: $('#titleFieldLabel'), composerTitle: $('#composerTitle'), submit: $('#submitProposalButton'),
@@ -124,18 +124,21 @@ function proposalCard(proposal) {
 }
 
 function renderRanking() {
-  const opinions = ranked(state.proposals.filter(item => item.type === 'opinion')).slice(0, 5);
-  if (!opinions.length) {
-    elements.ranking.innerHTML = '<div class="ranking-empty"><span>💬</span><strong>아직 올라온 의견이 없어요</strong><small>첫 의견을 올리면 여기에서 1위가 됩니다.</small></div>';
+  const opinion = state.kind === 'opinion';
+  const entries = ranked(state.proposals.filter(item => item.type === state.kind)).slice(0, 5);
+  if (!entries.length) {
+    elements.ranking.innerHTML = opinion
+      ? '<div class="ranking-empty"><span>💬</span><strong>아직 올라온 학생 의견이 없어요</strong><small>첫 의견을 내면 여기에서 1위가 됩니다.</small></div>'
+      : '<div class="ranking-empty"><span>🍱</span><strong>아직 올라온 급식 메뉴가 없어요</strong><small>첫 메뉴를 제안하면 여기에서 1위가 됩니다.</small></div>';
     return;
   }
-  elements.ranking.innerHTML = opinions.map((proposal, index) => {
+  elements.ranking.innerHTML = entries.map((proposal, index) => {
     const social = socialFor(proposal.id);
     const disabled = state.busy.has(proposal.id) ? ' disabled' : '';
     return `<article class="rank-card" data-id="${proposal.id}">
       <span class="rank-number">${index + 1}</span>
       <h3>${escapeHtml(proposal.title)}</h3>
-      <div class="rank-meta"><span>학생 의견 · ${social.likes.toLocaleString('ko-KR')} / 2,000표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
+      <div class="rank-meta"><span>${opinion ? '학생 의견' : '급식 메뉴'} · ${social.likes.toLocaleString('ko-KR')} / 2,000표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
     </article>`;
   }).join('');
 }
@@ -184,6 +187,13 @@ function updateModeCopy() {
   elements.heroTagOne.textContent = opinion ? '의견 내기!' : '🍝 메뉴 제안!';
   elements.heroTagTwo.textContent = '✓ 학생 한 표';
   elements.winnerBadge.textContent = opinion ? '학생 의견 현재 1위' : '급식 투표 현재 1위';
+  elements.rankingEyebrow.textContent = opinion ? 'STUDENT VOICE' : 'MEAL CHOICE';
+  elements.rankingTitle.innerHTML = opinion ? '학생 의견<br><em>TOP 5</em>' : '급식 메뉴<br><em>TOP 5</em>';
+  elements.rankingDescription.textContent = opinion
+    ? '아래 학생 의견 투표에서 받은 표가 이 순위에 바로 반영돼요. 가장 많은 표를 받은 의견부터 학교에 문의하고, 반영되지 않으면 다음 순위로 이어가요.'
+    : '아래 급식 메뉴 투표에서 받은 표가 이 순위에 바로 반영돼요. 가장 많은 표를 받은 메뉴를 한눈에 확인할 수 있어요.';
+  elements.rankingComposeButton.textContent = opinion ? '내 의견 내기' : '먹고 싶은 메뉴 제안하기';
+  elements.rankingListButton.textContent = opinion ? '전체 학생 의견 보기 ↓' : '전체 급식 메뉴 보기 ↓';
 }
 
 function render() {
@@ -320,7 +330,7 @@ function openComposer(type = state.kind) {
 }
 
 $$('[data-open-composer]').forEach(button => button.addEventListener('click', () => openComposer(state.kind)));
-$$('[data-open-opinion]').forEach(button => button.addEventListener('click', () => openComposer('opinion')));
+$$('[data-open-ranking]').forEach(button => button.addEventListener('click', () => openComposer(state.kind)));
 $$('[data-close-modal]').forEach(button => button.addEventListener('click', () => elements.composer.close()));
 $$('.type-option').forEach(button => button.addEventListener('click', () => selectComposerType(button.dataset.proposalType)));
 $('#identityButton').addEventListener('click', () => {
@@ -372,11 +382,9 @@ $$('[data-kind]').forEach(button => button.addEventListener('click', () => {
   history.replaceState({}, '', url);
   render();
 }));
-$$('[data-view-opinions]').forEach(button => button.addEventListener('click', () => {
-  state.kind = 'opinion';
-  $$('[data-kind]').forEach(item => item.classList.toggle('active', item.dataset.kind === 'opinion'));
+$$('[data-view-ranking]').forEach(button => button.addEventListener('click', () => {
   const url = new URL(location.href);
-  url.searchParams.set('tab', 'opinion');
+  url.searchParams.set('tab', state.kind);
   url.hash = 'ideas';
   history.replaceState({}, '', url);
   render();
@@ -396,11 +404,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   const localName = localStorage.getItem('school-meal-vote:name') || '';
   setNameLocally(localName);
   $$('[data-kind]').forEach(button => button.classList.toggle('active', button.dataset.kind === state.kind));
-  if (opinionDestination && requestedKind !== 'opinion') {
-    const url = new URL(location.href);
-    url.searchParams.set('tab', 'opinion');
-    history.replaceState({}, '', url);
-  }
   updateModeCopy();
   updateBoardCopy([]);
   renderWinner();

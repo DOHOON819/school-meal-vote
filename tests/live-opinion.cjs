@@ -7,7 +7,7 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   const title = `자동 확인용 의견 ${stamp}`;
   page.on('dialog', dialog => dialog.accept());
   await page.goto('http://127.0.0.1:4173/?tab=opinion#topOpinions', { waitUntil: 'domcontentloaded' });
-  await page.locator('[data-open-opinion]').click();
+  await page.locator('[data-open-ranking]').click();
   await page.locator('#titleInput').fill(title);
   await page.locator('#authorInput').fill(`19999 검증${stamp.slice(-3)}`);
   await page.locator('#proposalForm').evaluate(form => form.requestSubmit());
