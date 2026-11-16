@@ -113,15 +113,14 @@ function safeProposal(event, profiles) {
   try {
     const value = JSON.parse(event.content);
     const title = String(value.title || '').trim();
-    const categories = ['메인', '밥·면', '국·찌개', '간식·디저트', '기타'];
-    if (title.length < 2 || title.length > 60) return null;
+    const type = value.type === 'opinion' ? 'opinion' : 'meal';
+    if (title.length < 2 || title.length > 80) return null;
     return {
       id: event.id,
       authorId: event.pubkey,
       author: profiles.get(event.pubkey) || String(value.author || '급식친구').slice(0, 20),
       title,
-      description: String(value.description || '').trim().slice(0, 500),
-      category: categories.includes(value.category) ? value.category : '기타',
+      type,
       createdAt: event.created_at,
       coordinate: `${PROPOSAL_KIND}:${event.pubkey}:${tagValue(event, 'd')}`
     };
@@ -183,18 +182,15 @@ export function createBackend() {
 
     async publishProposal(value) {
       const title = String(value.title || '').trim();
-      const description = String(value.description || '').trim();
       const author = String(value.author || '').trim();
-      const categories = ['메인', '밥·면', '국·찌개', '간식·디저트', '기타'];
-      if (title.length < 2 || title.length > 60) throw new Error('메뉴 이름을 2~60자로 입력해 주세요.');
-      if (description.length > 500) throw new Error('이유는 500자 이내로 입력해 주세요.');
-      if (!categories.includes(value.category)) throw new Error('메뉴 분류를 선택해 주세요.');
+      const type = value.type === 'opinion' ? 'opinion' : 'meal';
+      if (title.length < 2 || title.length > 80) throw new Error(type === 'opinion' ? '의견을 2~80자로 입력해 주세요.' : '메뉴 이름을 2~80자로 입력해 주세요.');
       if (author.length < 2 || author.length > 20) throw new Error('이름은 2~20자로 입력해 주세요.');
       const event = sign({
         kind: PROPOSAL_KIND,
         created_at: now(),
-        tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title]],
-        content: JSON.stringify({ title, description, category: value.category, author })
+        tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title], ['type', type]],
+        content: JSON.stringify({ title, type, author })
       });
       return publish(event);
     },
