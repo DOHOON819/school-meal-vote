@@ -159,6 +159,20 @@ button { border: 0; cursor: pointer; }
 .steps strong { margin-top: auto; font-size: 22px; }
 .steps span { margin-top: 5px; color: rgba(255,255,255,.62); font-size: 13px; }
 
+.qr-section { padding: 105px max(24px, calc((100vw - 1192px) / 2)); background: #eee8d8; }
+.qr-heading { max-width: 720px; }
+.qr-heading h2 { margin: 10px 0 7px; font-size: clamp(38px, 5vw, 60px); line-height: 1.06; letter-spacing: -.06em; }
+.qr-heading p { margin: 0; color: var(--muted); }
+.qr-grid { margin-top: 35px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.qr-card { min-height: 300px; padding: 31px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; gap: 25px; overflow: hidden; }
+.qr-card.meal-qr { background: #dceba9; }
+.qr-card.opinion-qr { background: #dfe7f5; }
+.qr-card > div > span { display: inline-block; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.62); font-size: 11px; font-weight: 900; }
+.qr-card h3 { margin: 15px 0 6px; max-width: 270px; font-size: 27px; line-height: 1.16; letter-spacing: -.04em; }
+.qr-card p { max-width: 270px; margin: 0; color: var(--muted); font-size: 13px; }
+.qr-card a { display: inline-block; margin-top: 24px; padding-bottom: 3px; border-bottom: 1px solid; font-size: 13px; font-weight: 900; }
+.qr-card img { width: min(210px, 37%); aspect-ratio: 1; border-radius: 18px; box-shadow: 0 16px 35px rgba(26,37,18,.13); image-rendering: pixelated; }
+
 footer { padding: 48px clamp(24px, 6vw, 90px); display: flex; align-items: center; justify-content: space-between; gap: 24px; background: #11170d; color: rgba(255,255,255,.62); font-size: 13px; }
 .footer-brand { color: white; }
 footer div:last-child { display: flex; gap: 9px; align-items: center; }
@@ -208,6 +222,7 @@ footer a:hover, footer button:hover { color: white; }
   .ranking-board { min-height: 560px; }
   .steps { grid-template-columns: 1fr; }
   .steps li { min-height: 150px; }
+  .qr-grid { grid-template-columns: 1fr; }
   footer { flex-direction: column; text-align: center; }
 }
 
@@ -255,6 +270,11 @@ footer a:hover, footer button:hover { color: white; }
   .vote-bar { grid-template-columns: 1fr 1fr; }
   .comment-toggle { grid-column: 1 / -1; }
   .how-section { padding: 65px 18px 80px; }
+  .qr-section { padding: 72px 16px 88px; }
+  .qr-card { min-height: 0; padding: 23px; border-radius: 22px; }
+  .qr-card h3 { font-size: 22px; }
+  .qr-card p { display: none; }
+  .qr-card img { width: 132px; border-radius: 13px; }
   .modal-shell { padding: 30px 21px 24px; border-radius: 23px; max-height: calc(100vh - 30px); overflow-y: auto; }
   .modal-shell h2 { padding-right: 30px; }
   .type-option { min-height: 108px; }

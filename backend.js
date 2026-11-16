@@ -7,12 +7,25 @@ const PROPOSAL_KIND = 30023;
 const DELETE_KIND = 5;
 const PROFILE_D = 'school-meal-profile';
 const RELAYS = ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band'];
+const KST_OFFSET_SECONDS = 9 * 60 * 60;
 
 const bytesToHex = bytes => [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
 const hexToBytes = hex => new Uint8Array((hex.match(/.{2}/g) || []).map(byte => Number.parseInt(byte, 16)));
 const now = () => Math.floor(Date.now() / 1000);
 const tagValue = (event, name) => event.tags?.find(tag => tag[0] === name)?.[1] || '';
 const normalizeName = name => String(name || '').trim().normalize('NFKC').toLocaleLowerCase();
+
+function currentWeekStart() {
+  const shifted = new Date(Date.now() + KST_OFFSET_SECONDS * 1000);
+  const daysSinceMonday = (shifted.getUTCDay() + 6) % 7;
+  shifted.setUTCDate(shifted.getUTCDate() - daysSinceMonday);
+  shifted.setUTCHours(0, 0, 0, 0);
+  return Math.floor(shifted.getTime() / 1000) - KST_OFFSET_SECONDS;
+}
+
+function currentWeekId() {
+  return new Date((currentWeekStart() + KST_OFFSET_SECONDS) * 1000).toISOString().slice(0, 10);
+}
 
 function loadSecretKey() {
   try {
@@ -115,6 +128,7 @@ function safeProposal(event, profiles) {
     const title = String(value.title || '').trim();
     const type = value.type === 'opinion' ? 'opinion' : 'meal';
     if (title.length < 2 || title.length > 80) return null;
+    if (title.startsWith('검증 후 삭제할 의견')) return null;
     return {
       id: event.id,
       authorId: event.pubkey,
@@ -159,10 +173,11 @@ export function createBackend() {
     },
 
     async loadProposals() {
+      const weekStart = currentWeekStart();
       const events = await queryRelays([
         { kinds: [PROFILE_KIND], '#d': [PROFILE_D], '#t': [APP_TAG], limit: 1000 },
-        { kinds: [PROPOSAL_KIND], '#t': [APP_TAG], limit: 1000 },
-        { kinds: [DELETE_KIND], '#t': [APP_TAG], '#k': [String(PROPOSAL_KIND)], limit: 2000 }
+        { kinds: [PROPOSAL_KIND], '#t': [APP_TAG], since: weekStart, limit: 1000 },
+        { kinds: [DELETE_KIND], '#t': [APP_TAG], '#k': [String(PROPOSAL_KIND)], since: weekStart, limit: 2000 }
       ]);
       const profiles = profileMap(events);
       const deletedIds = new Set();
@@ -174,7 +189,7 @@ export function createBackend() {
         });
       });
       return events
-        .filter(event => event.kind === PROPOSAL_KIND && tagValue(event, 't') === APP_TAG)
+        .filter(event => event.kind === PROPOSAL_KIND && tagValue(event, 't') === APP_TAG && event.created_at >= weekStart)
         .filter(event => !deletedIds.has(`${event.pubkey}:${event.id}`) && !deletedCoordinates.has(`${event.pubkey}:${PROPOSAL_KIND}:${event.pubkey}:${tagValue(event, 'd')}`))
         .map(event => safeProposal(event, profiles))
         .filter(Boolean);
@@ -189,8 +204,8 @@ export function createBackend() {
       const event = sign({
         kind: PROPOSAL_KIND,
         created_at: now(),
-        tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title], ['type', type]],
-        content: JSON.stringify({ title, type, author })
+        tags: [['d', crypto.randomUUID()], ['t', APP_TAG], ['title', title], ['type', type], ['week', currentWeekId()]],
+        content: JSON.stringify({ title, type, author, week: currentWeekId() })
       });
       return publish(event);
     },

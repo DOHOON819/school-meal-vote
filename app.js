@@ -1,7 +1,8 @@
 import { createBackend } from './backend.js';
 
 const backend = createBackend();
-const state = { proposals: [], social: new Map(), kind: 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
+const requestedKind = new URLSearchParams(location.search).get('tab');
+const state = { proposals: [], social: new Map(), kind: requestedKind === 'opinion' ? 'opinion' : 'meal', sort: 'popular', name: '', busy: new Set(), openComments: new Set(), composerType: 'meal' };
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const elements = {
@@ -9,7 +10,7 @@ const elements = {
   proposalCount: $('#proposalCount'), voteCount: $('#voteCount'), sort: $('#sortSelect'), refresh: $('#refreshButton'),
   boardTitle: $('#boardTitle'), boardDescription: $('#boardDescription'), emptyTitle: $('#emptyTitle'), emptyDescription: $('#emptyDescription'),
   winnerSymbol: $('#winnerSymbol'), winnerTitle: $('#winnerTitle'), winnerHint: $('#winnerHint'), winnerVotes: $('#winnerVotes'),
-  composer: $('#composerDialog'), proposalForm: $('#proposalForm'), title: $('#titleInput'), proposalType: $('#proposalTypeInput'),
+  composer: $('#composerDialog'), proposalForm: $('#proposalForm'), title: $('#titleInput'), author: $('#authorInput'), proposalType: $('#proposalTypeInput'),
   titleFieldLabel: $('#titleFieldLabel'), composerTitle: $('#composerTitle'), submit: $('#submitProposalButton'),
   identityDialog: $('#identityDialog'), identityForm: $('#identityForm'), identityInput: $('#identityInput'), identityLabel: $('#identityLabel'), toast: $('#toast')
 };
@@ -18,6 +19,29 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '
 const initials = name => [...String(name || '서운')].slice(0, 2).join('');
 const socialFor = id => state.social.get(id) || { likes: 0, dislikes: 0, mine: 0, comments: [] };
 const scoreFor = id => { const social = socialFor(id); return social.likes - social.dislikes; };
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function nextWeeklyResetTime() {
+  const shifted = new Date(Date.now() + KST_OFFSET_MS);
+  const daysSinceMonday = (shifted.getUTCDay() + 6) % 7;
+  shifted.setUTCDate(shifted.getUTCDate() - daysSinceMonday + 7);
+  shifted.setUTCHours(0, 0, 0, 0);
+  return shifted.getTime() - KST_OFFSET_MS;
+}
+
+let weeklyResetTimer;
+function scheduleWeeklyReset() {
+  window.clearTimeout(weeklyResetTimer);
+  const delay = Math.max(1000, nextWeeklyResetTime() - Date.now());
+  weeklyResetTimer = window.setTimeout(async () => {
+    state.proposals = [];
+    state.social = new Map();
+    render();
+    toast('새 주 투표가 시작됐어요!');
+    await load({ quiet: true });
+    scheduleWeeklyReset();
+  }, delay);
+}
 
 function relativeTime(timestamp) {
   const seconds = Math.max(0, Math.floor(Date.now() / 1000) - timestamp);
@@ -39,17 +63,13 @@ function toast(message) {
 function setNameLocally(name) {
   state.name = name;
   elements.identityInput.value = name;
-  elements.identityLabel.textContent = name || '이름 설정';
-}
-
-function generatedName() {
-  const saved = localStorage.getItem('school-meal-vote:name');
-  if (saved) return saved;
-  return `서운학생${Math.floor(100 + Math.random() * 900)}`;
+  elements.author.value = name;
+  elements.identityLabel.textContent = name || '10101 OOO';
 }
 
 async function ensureName(preferred) {
-  const value = String(preferred || state.name || generatedName()).trim();
+  const value = String(preferred || state.name || '').trim();
+  if (!/^\d{5}\s+\S{1,10}$/.test(value)) throw new Error('제안자 이름을 10101 OOO 형식으로 입력해 주세요.');
   const name = await backend.setName(value);
   localStorage.setItem('school-meal-vote:name', name);
   setNameLocally(name);
@@ -77,13 +97,15 @@ function proposalCard(proposal) {
     ? social.comments.map(comment => `<div class="comment"><strong>${escapeHtml(comment.name)}</strong>${escapeHtml(comment.body)}</div>`).join('')
     : '<p class="comment-empty">첫 댓글을 남겨보세요.</p>';
   const typeLabel = proposal.type === 'opinion' ? '💬 학교 의견' : '🍱 급식 메뉴';
+  const positiveLabel = proposal.type === 'meal' ? '먹고 싶어요' : '좋아요';
+  const voteDisabled = state.busy.has(proposal.id) ? ' disabled' : '';
   return `<article class="idea-card" data-id="${proposal.id}">
     <div class="card-top"><span class="category-chip${proposal.type === 'opinion' ? ' opinion' : ''}">${typeLabel}</span>${mine ? '<button class="delete-button" data-action="delete" type="button">내가 올린 글 삭제</button>' : ''}</div>
     <h3>${escapeHtml(proposal.title)}</h3>
     <div class="author-row"><span class="author"><i class="avatar">${escapeHtml(initials(proposal.author))}</i>${escapeHtml(proposal.author)}</span><time>${relativeTime(proposal.createdAt)}</time></div>
     <div class="vote-bar">
-      <button class="vote-button like${social.mine === 1 ? ' active' : ''}" data-action="like" type="button" aria-pressed="${social.mine === 1}">♥ 좋아요 <b>${social.likes}</b></button>
-      <button class="vote-button dislike${social.mine === -1 ? ' active' : ''}" data-action="dislike" type="button" aria-pressed="${social.mine === -1}">– 별로예요 <b>${social.dislikes}</b></button>
+      <button class="vote-button like${social.mine === 1 ? ' active' : ''}" data-action="like" type="button" aria-pressed="${social.mine === 1}"${voteDisabled}>${social.mine === 1 ? '✓ ' + positiveLabel + ' 취소' : '♥ ' + positiveLabel} <b>${social.likes}</b></button>
+      <button class="vote-button dislike${social.mine === -1 ? ' active' : ''}" data-action="dislike" type="button" aria-pressed="${social.mine === -1}"${voteDisabled}>${social.mine === -1 ? '✓ 별로예요 취소' : '– 별로예요'} <b>${social.dislikes}</b></button>
       <button class="comment-toggle" data-action="comments" type="button">댓글 ${social.comments.length}</button>
     </div>
     <div class="comments" ${commentsOpen ? '' : 'hidden'}>
@@ -101,10 +123,11 @@ function renderRanking() {
   }
   elements.ranking.innerHTML = opinions.map((proposal, index) => {
     const social = socialFor(proposal.id);
+    const disabled = state.busy.has(proposal.id) ? ' disabled' : '';
     return `<article class="rank-card" data-id="${proposal.id}">
       <span class="rank-number">${index + 1}</span>
       <h3>${escapeHtml(proposal.title)}</h3>
-      <div class="rank-meta"><span>${escapeHtml(proposal.author)} · ${social.likes}표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button">♥ 한 표</button></div>
+      <div class="rank-meta"><span>${escapeHtml(proposal.author)} · ${social.likes}표</span><button class="rank-vote${social.mine === 1 ? ' active' : ''}" data-action="like" type="button"${disabled}>${social.mine === 1 ? '✓ 투표 취소' : '♥ 한 표'}</button></div>
     </article>`;
   }).join('');
 }
@@ -182,12 +205,15 @@ async function handleVote(proposalId, requested) {
   render();
   try {
     await backend.vote(proposalId, next);
-    toast(next === 1 ? '한 표가 반영됐어요!' : next === -1 ? '의견이 반영됐어요.' : '투표를 취소했어요.');
+    const proposal = state.proposals.find(item => item.id === proposalId);
+    if (next === 0) toast(requested === 1 ? '좋아요 투표를 취소했어요.' : '별로예요 투표를 취소했어요.');
+    else if (next === 1) toast(proposal?.type === 'meal' ? '먹고 싶어요에 한 표를 눌렀어요!' : '이 의견에 한 표를 눌렀어요!');
+    else toast('별로예요에 한 표를 눌렀어요.');
   } catch (error) {
     Object.assign(social, previous);
     render();
     toast(error.message || '투표하지 못했어요.');
-  } finally { state.busy.delete(proposalId); }
+  } finally { state.busy.delete(proposalId); render(); }
 }
 
 async function handleAction(button) {
@@ -249,6 +275,7 @@ function selectComposerType(type) {
 
 function openComposer(type = state.kind) {
   selectComposerType(type);
+  elements.author.value = state.name || '';
   elements.composer.showModal();
   requestAnimationFrame(() => elements.title.focus());
 }
@@ -258,7 +285,7 @@ $$('[data-open-opinion]').forEach(button => button.addEventListener('click', () 
 $$('[data-close-modal]').forEach(button => button.addEventListener('click', () => elements.composer.close()));
 $$('.type-option').forEach(button => button.addEventListener('click', () => selectComposerType(button.dataset.proposalType)));
 $('#identityButton').addEventListener('click', () => {
-  elements.identityInput.value = state.name || generatedName();
+  elements.identityInput.value = state.name || '';
   elements.identityDialog.showModal();
   requestAnimationFrame(() => elements.identityInput.select());
 });
@@ -269,7 +296,7 @@ elements.proposalForm.addEventListener('submit', async event => {
   elements.submit.disabled = true;
   elements.submit.textContent = '올리는 중…';
   try {
-    const author = await ensureName();
+    const author = await ensureName(elements.author.value);
     await backend.publishProposal({ title: elements.title.value, type: elements.proposalType.value, author });
     elements.proposalForm.reset();
     selectComposerType('meal');
@@ -289,6 +316,9 @@ elements.identityForm.addEventListener('submit', async event => {
 $$('[data-kind]').forEach(button => button.addEventListener('click', () => {
   $$('[data-kind]').forEach(item => item.classList.toggle('active', item === button));
   state.kind = button.dataset.kind;
+  const url = new URL(location.href);
+  url.searchParams.set('tab', state.kind);
+  history.replaceState({}, '', url);
   render();
 }));
 elements.sort.addEventListener('change', () => { state.sort = elements.sort.value; render(); });
@@ -304,8 +334,10 @@ $('#copyLinkButton').addEventListener('click', async () => {
 window.addEventListener('DOMContentLoaded', async () => {
   const localName = localStorage.getItem('school-meal-vote:name') || '';
   setNameLocally(localName);
+  $$('[data-kind]').forEach(button => button.classList.toggle('active', button.dataset.kind === state.kind));
   backend.getName().then(name => {
     if (name) { localStorage.setItem('school-meal-vote:name', name); setNameLocally(name); }
   }).catch(() => {});
   await load();
+  scheduleWeeklyReset();
 });
