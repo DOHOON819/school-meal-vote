@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dohoon819.github.io/school-meal-vote/sitemap.xml
