@@ -16,6 +16,9 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   if (!(await page.locator('[data-kind="opinion"].active').count())) throw new Error('Lower student opinion tab did not sync with TOP 5 switch');
   await page.locator('[data-ranking-kind="meal"]').click();
   if (await page.locator('.poster-download').count()) throw new Error('Paper/poster promotion must not appear on the website');
+  if (!(await page.locator('.campaign-visual').count())) throw new Error('Campaign image is missing from the website');
+  if (!(await page.locator('.campaign-visual img').isVisible())) throw new Error('Campaign image is not visible');
+  if (await page.locator('.campaign-visual img').evaluate(image => !image.complete || image.naturalWidth < 1000)) throw new Error('Campaign image did not load at full quality');
   for (const paperCopy of ['A4', '인쇄', '학교에 바로 붙일', '포스터']) {
     if (pageText.includes(paperCopy)) throw new Error(`Paper-related copy is visible on the website: ${paperCopy}`);
   }
