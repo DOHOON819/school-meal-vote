@@ -10,6 +10,8 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   const pageText = await page.locator('body').innerText();
   if (!(await page.locator('#topOpinions').count())) throw new Error('TOP 5 section missing');
   if (!(await page.locator('#rankingTitle').innerText()).includes('급식 메뉴')) throw new Error('Meal TOP 5 is missing on meal tab');
+  if (!(await page.locator('.poster-download').count())) throw new Error('A4 campaign poster preview is missing');
+  if (await page.locator('.poster-download a[href$=".pdf"]').getAttribute('href') !== 'assets/seoun-pick-a4-campaign-poster.pdf') throw new Error('A4 poster PDF download link is wrong');
   for (const banned of ['바삭한 치킨 데이', '운동장 그늘막', '오늘 급식, 그냥 기다리지 말고 직접 골라요', '재료를 입력', '한 줄 올리기', '일요일 밤 12시', '매주 월요일 00:00']) {
     if (pageText.includes(banned)) throw new Error(`Removed text is still visible: ${banned}`);
   }
