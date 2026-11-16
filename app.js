@@ -1,4 +1,4 @@
-import { createBackend } from './backend.js?v=9';
+import { createBackend } from './backend.js?v=11';
 
 const backend = createBackend();
 const requestedKind = new URLSearchParams(location.search).get('tab');
@@ -171,7 +171,7 @@ function updateBoardCopy(items) {
   elements.loadingMessage.textContent = opinion ? '친구들의 의견을 모으고 있어요…' : '친구들의 메뉴를 모으고 있어요…';
   elements.emptySymbol.textContent = opinion ? '💬' : '🍽️';
   elements.emptyTitle.textContent = opinion ? '아직 올라온 의견이 없어요' : '아직 올라온 메뉴가 없어요';
-  elements.emptyDescription.textContent = opinion ? '급식이나 학교생활에 관한 의견을 자유롭게 내보세요.' : '먹고 싶은 메뉴를 첫 번째로 제안해 보세요.';
+  elements.emptyDescription.textContent = opinion ? '학교생활에 관한 의견을 자유롭게 내보세요.' : '먹고 싶은 메뉴를 첫 번째로 제안해 보세요.';
   elements.summary.textContent = `${opinion ? '학생 의견' : '급식 메뉴'} ${items.length}개`;
 }
 
@@ -206,6 +206,7 @@ function render() {
   elements.proposalCount.textContent = state.proposals.length.toLocaleString('ko-KR');
   elements.voteCount.textContent = [...state.social.values()].reduce((sum, social) => sum + social.likes + social.dislikes, 0).toLocaleString('ko-KR');
   elements.remainingVoteCount.textContent = `${Math.max(0, MAX_ACTIVE_VOTES - activeVoteCount())}/${MAX_ACTIVE_VOTES}`;
+  $$('[data-ranking-kind]').forEach(button => button.classList.toggle('active', button.dataset.rankingKind === state.kind));
   renderRanking();
   renderWinner();
 }
@@ -374,14 +375,18 @@ elements.identityForm.addEventListener('submit', async event => {
   catch (error) { toast(error.message || '이름을 바꾸지 못했어요.'); }
 });
 
-$$('[data-kind]').forEach(button => button.addEventListener('click', () => {
-  $$('[data-kind]').forEach(item => item.classList.toggle('active', item === button));
-  state.kind = button.dataset.kind;
+function switchKind(kind, { scroll = false } = {}) {
+  state.kind = kind === 'opinion' ? 'opinion' : 'meal';
+  $$('[data-kind]').forEach(item => item.classList.toggle('active', item.dataset.kind === state.kind));
+  $$('[data-ranking-kind]').forEach(item => item.classList.toggle('active', item.dataset.rankingKind === state.kind));
   const url = new URL(location.href);
   url.searchParams.set('tab', state.kind);
   history.replaceState({}, '', url);
   render();
-}));
+  if (scroll) $('#topOpinions').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$$('[data-kind]').forEach(button => button.addEventListener('click', () => switchKind(button.dataset.kind)));
+$$('[data-ranking-kind]').forEach(button => button.addEventListener('click', () => switchKind(button.dataset.rankingKind)));
 $$('[data-view-ranking]').forEach(button => button.addEventListener('click', () => {
   const url = new URL(location.href);
   url.searchParams.set('tab', state.kind);
@@ -404,6 +409,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const localName = localStorage.getItem('school-meal-vote:name') || '';
   setNameLocally(localName);
   $$('[data-kind]').forEach(button => button.classList.toggle('active', button.dataset.kind === state.kind));
+  $$('[data-ranking-kind]').forEach(button => button.classList.toggle('active', button.dataset.rankingKind === state.kind));
   updateModeCopy();
   updateBoardCopy([]);
   renderWinner();

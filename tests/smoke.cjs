@@ -9,7 +9,12 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.waitForTimeout(1200);
   const pageText = await page.locator('body').innerText();
   if (!(await page.locator('#topOpinions').count())) throw new Error('TOP 5 section missing');
+  if (await page.locator('[data-ranking-kind]').count() !== 2) throw new Error('TOP 5 switch is missing');
   if (!(await page.locator('#rankingTitle').innerText()).includes('급식 메뉴')) throw new Error('Meal TOP 5 is missing on meal tab');
+  await page.locator('[data-ranking-kind="opinion"]').click();
+  if (!(await page.locator('#rankingTitle').innerText()).includes('학생 의견')) throw new Error('TOP 5 switch did not open student opinions');
+  if (!(await page.locator('[data-kind="opinion"].active').count())) throw new Error('Lower student opinion tab did not sync with TOP 5 switch');
+  await page.locator('[data-ranking-kind="meal"]').click();
   if (!(await page.locator('.poster-download').count())) throw new Error('A4 campaign poster preview is missing');
   if (await page.locator('.poster-download a[href$=".pdf"]').getAttribute('href') !== 'assets/seoun-pick-a4-campaign-poster.pdf') throw new Error('A4 poster PDF download link is wrong');
   for (const banned of ['바삭한 치킨 데이', '운동장 그늘막', '오늘 급식, 그냥 기다리지 말고 직접 골라요', '재료를 입력', '한 줄 올리기', '일요일 밤 12시', '매주 월요일 00:00']) {
@@ -26,6 +31,7 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.locator('[data-proposal-type="opinion"]').click();
   const placeholder = await page.locator('#titleInput').getAttribute('placeholder');
   if (!placeholder.includes('신청곡')) throw new Error(`Opinion composer did not switch: ${placeholder}; ${errors.join(' | ')}`);
+  if ((await page.locator('[data-proposal-type="opinion"]').innerText()).includes('급식')) throw new Error('Meal keyword is mixed into the student opinion composer');
   if (await page.locator('#opinionTopicInput, #opinionTopicField').count()) throw new Error('Unneeded opinion type field is still present');
   if (!(await page.locator('#remainingVoteCount').innerText()).includes('/2')) throw new Error('Two-vote allowance is not shown');
   if ((await page.locator('#proposalForm textarea').count())) throw new Error('Complex description or ingredient field is present');
@@ -35,7 +41,10 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.waitForSelector('body.opinion-mode');
   if (!(await page.locator('[data-kind="opinion"].active').count())) throw new Error('Opinion tab is not active on opinion TOP 5 URL');
   if (!(await page.locator('#rankingTitle').innerText()).includes('학생 의견')) throw new Error('Student opinion TOP 5 is missing on opinion tab');
+  if (!(await page.locator('[data-ranking-kind="opinion"].active').count())) throw new Error('Student opinion TOP 5 switch is not active');
   if (!(await page.locator('#topOpinions').innerText()).includes('반영되지 않으면 다음 순위')) throw new Error('Student TOP 5 follow-up policy is missing');
+  if ((await page.locator('#rankingDescription').innerText()).includes('급식')) throw new Error('Meal keyword is mixed into the student opinion TOP 5 copy');
+  if ((await page.locator('.qr-card.opinion-qr').innerText()).includes('급식')) throw new Error('Meal keyword is mixed into the student opinion QR copy');
   if ((await page.locator('#heroTagOne').innerText()).includes('🍝')) throw new Error('Food icon is still visible in opinion hero');
   if (!(await page.locator('#boardTitle').innerText()).includes('학생 의견')) throw new Error('Opinion vote board copy is missing');
   if (!(await page.locator('.vote-cap').innerText()).includes('2,000')) throw new Error('2,000 vote cap note is missing');
@@ -43,6 +52,9 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   await mobile.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
   await mobile.waitForTimeout(500);
+  if (!(await mobile.locator('[data-ranking-kind="opinion"]').isVisible())) throw new Error('Student opinion TOP 5 switch is hidden on mobile');
+  await mobile.locator('[data-ranking-kind="opinion"]').click();
+  if (!(await mobile.locator('#rankingTitle').innerText()).includes('학생 의견')) throw new Error('Mobile TOP 5 switch did not open student opinions');
   const mobileFooterImage = await mobile.locator('.footer-logo-panel img').evaluate(img => ({ width: img.getBoundingClientRect().width, height: img.getBoundingClientRect().height }));
   if (mobileFooterImage.width !== 180 || mobileFooterImage.height !== 34) throw new Error(`Mobile footer logo dimensions are wrong: ${JSON.stringify(mobileFooterImage)}`);
   await mobile.screenshot({ path: 'D:/CodexData/temp/seoun-vote-mobile.png', fullPage: true });
