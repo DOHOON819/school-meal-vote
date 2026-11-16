@@ -12,7 +12,7 @@ const { chromium } = require('C:/Users/do819/.cache/codex-runtimes/codex-primary
   await page.locator('[data-open-composer]').first().click();
   await page.locator('[data-proposal-type="opinion"]').click();
   const placeholder = await page.locator('#titleInput').getAttribute('placeholder');
-  if (!placeholder.includes('그늘막')) throw new Error(`Opinion composer did not switch: ${placeholder}; ${errors.join(' | ')}`);
+  if (!placeholder.includes('신청곡')) throw new Error(`Opinion composer did not switch: ${placeholder}; ${errors.join(' | ')}`);
   if (await page.locator('#authorInput').getAttribute('placeholder') !== '10101 OOO') throw new Error('Author format placeholder missing');
   await page.locator('[data-close-modal]').click();
   await page.screenshot({ path: 'D:/CodexData/temp/seoun-vote-desktop.png', fullPage: true });

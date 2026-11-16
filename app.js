@@ -271,7 +271,7 @@ function selectComposerType(type) {
   const opinion = type === 'opinion';
   elements.composerTitle.textContent = opinion ? '학교에 바라는 점이 있나요?' : '어떤 급식이 먹고 싶나요?';
   elements.titleFieldLabel.innerHTML = opinion ? '학교에 바라는 점 <b>필수</b>' : '먹고 싶은 메뉴 <b>필수</b>';
-  elements.title.placeholder = opinion ? '예: 운동장에 그늘막을 만들어 주세요' : '예: 치킨마요 덮밥';
+  elements.title.placeholder = opinion ? '예: 점심시간에 신청곡을 틀어주세요' : '예: 치킨마요 덮밥';
 }
 
 function openComposer(type = state.kind) {
